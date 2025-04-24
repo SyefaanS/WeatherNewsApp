@@ -1,11 +1,20 @@
 import React, { useState, useRef, useEffect } from "react";
-import { View, TextInput, Button, StyleSheet, Text, Alert } from "react-native";
+import {
+  View,
+  TextInput,
+  Button,
+  StyleSheet,
+  Text,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+} from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useTheme } from "../theme/useTheme";
 import * as Google from "expo-auth-session/providers/google";
 import * as WebBrowser from "expo-web-browser";
+import { useTheme } from "../theme/useTheme";
 
-WebBrowser.maybeCompleteAuthSession(); // Required for redirect flow
+WebBrowser.maybeCompleteAuthSession(); // Handles OAuth redirect
 
 const LoginScreen = ({ navigation }) => {
   const [username, setUsername] = useState("");
@@ -13,62 +22,58 @@ const LoginScreen = ({ navigation }) => {
   const emailInputRef = useRef(null);
   const theme = useTheme();
 
-  const validateEmail = (email: string) =>
-    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-
-  const handleLogin = async () => {
-    if (!username || !email) {
-      Alert.alert("Error", "Please enter both username and email.");
-      return;
-    }
-
-    if (!validateEmail(email)) {
-      Alert.alert("Invalid Email", "Please enter a valid email address.");
-      return;
-    }
-
-    const user = { username, email };
-    await AsyncStorage.setItem("user", JSON.stringify(user));
-    navigation.replace("Home");
-  };
-
-  // ---------------- GOOGLE LOGIN SETUP ----------------
+  // Setup Google Auth Request
   const [request, response, promptAsync] = Google.useAuthRequest({
     clientId:
-      "213285430672-7b1k2rb9sl94eaesrhe2q1v8l5t0r97b.apps.googleusercontent.com", // Replace this with your actual client ID
+      "213285430672-7b1k2rb9sl94eaesrhe2q1v8l5t0r97b.apps.googleusercontent.com",
   });
 
+  // Handle Google Login Response
   useEffect(() => {
     if (response?.type === "success") {
-      const { authentication } = response;
-      const user = {
+      const { accessToken } = response.authentication || {};
+      saveUserAndNavigate({
         username: "Google User",
         email: "googleuser@example.com",
-        token: authentication?.accessToken,
-      };
-
-      AsyncStorage.setItem("user", JSON.stringify(user)).then(() => {
-        navigation.replace("Home");
+        token: accessToken,
       });
     }
   }, [response]);
 
-  // ---------------------------------------------------
+  // Email validation
+  const isEmailValid = (email: string) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+  // Save user and navigate to Home
+  const saveUserAndNavigate = async (user: object) => {
+    await AsyncStorage.setItem("user", JSON.stringify(user));
+    navigation.replace("Home");
+  };
+
+  // Handle manual login
+  const handleLogin = () => {
+    if (!username || !email) {
+      return Alert.alert("Missing Fields", "Please fill out both fields.");
+    }
+
+    if (!isEmailValid(email)) {
+      return Alert.alert("Invalid Email", "Please enter a valid email address.");
+    }
+
+    saveUserAndNavigate({ username, email });
+  };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      style={[styles.container, { backgroundColor: theme.background }]}
+    >
       <Text style={[styles.title, { color: theme.text }]}>Login</Text>
 
       <TextInput
         placeholder="Username"
         placeholderTextColor={theme.placeholder}
-        style={[
-          styles.input,
-          {
-            backgroundColor: theme.inputBackground,
-            color: theme.text,
-          },
-        ]}
+        style={[styles.input, inputStyle(theme)]}
         value={username}
         onChangeText={setUsername}
         returnKeyType="next"
@@ -80,13 +85,7 @@ const LoginScreen = ({ navigation }) => {
         ref={emailInputRef}
         placeholder="Email"
         placeholderTextColor={theme.placeholder}
-        style={[
-          styles.input,
-          {
-            backgroundColor: theme.inputBackground,
-            color: theme.text,
-          },
-        ]}
+        style={[styles.input, inputStyle(theme)]}
         value={email}
         onChangeText={setEmail}
         keyboardType="email-address"
@@ -101,7 +100,7 @@ const LoginScreen = ({ navigation }) => {
         testID="loginButton"
       />
 
-      <View style={{ height: 20 }} />
+      <View style={styles.spacer} />
 
       <Button
         title="Login with Google"
@@ -110,11 +109,17 @@ const LoginScreen = ({ navigation }) => {
         color="#EA4335"
         testID="googleLoginButton"
       />
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
 export default LoginScreen;
+
+// Helper for styling input based on theme
+const inputStyle = (theme) => ({
+  backgroundColor: theme.inputBackground,
+  color: theme.text,
+});
 
 const styles = StyleSheet.create({
   container: {
@@ -133,5 +138,8 @@ const styles = StyleSheet.create({
     fontSize: 28,
     textAlign: "center",
     marginBottom: 24,
+  },
+  spacer: {
+    height: 20,
   },
 });
