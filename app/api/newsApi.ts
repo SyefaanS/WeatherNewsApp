@@ -1,16 +1,14 @@
-import axios from 'axios';
+import axios from "axios";
+import { NEWS_API_KEY, NEWS_API_URL } from "@env";
 
-const API_KEY = '7e9c1bd449434cd5a6973455e7762d8e';
-const BASE_URL = 'https://newsapi.org/v2/top-headlines';
-
- const fetchNews = async () => {
-  const response = await axios.get(BASE_URL, {
+const fetchNews = async () => {
+  const response = await axios.get(NEWS_API_URL, {
     params: {
-      country: 'us', 
-      apiKey: API_KEY,
+      country: "us",
+      apiKey: NEWS_API_KEY,
     },
   });
-  return response.data.articles; 
+  return response.data.articles;
 };
 
 export default fetchNews;

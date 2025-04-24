@@ -1,7 +1,11 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { View, TextInput, Button, StyleSheet, Text, Alert } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTheme } from "../theme/useTheme";
+import * as Google from "expo-auth-session/providers/google";
+import * as WebBrowser from "expo-web-browser";
+
+WebBrowser.maybeCompleteAuthSession(); // Required for redirect flow
 
 const LoginScreen = ({ navigation }) => {
   const [username, setUsername] = useState("");
@@ -9,7 +13,6 @@ const LoginScreen = ({ navigation }) => {
   const emailInputRef = useRef(null);
   const theme = useTheme();
 
-  // Simple email validation regex
   const validateEmail = (email: string) =>
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
@@ -28,6 +31,29 @@ const LoginScreen = ({ navigation }) => {
     await AsyncStorage.setItem("user", JSON.stringify(user));
     navigation.replace("Home");
   };
+
+  // ---------------- GOOGLE LOGIN SETUP ----------------
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    clientId:
+      "213285430672-7b1k2rb9sl94eaesrhe2q1v8l5t0r97b.apps.googleusercontent.com", // Replace this with your actual client ID
+  });
+
+  useEffect(() => {
+    if (response?.type === "success") {
+      const { authentication } = response;
+      const user = {
+        username: "Google User",
+        email: "googleuser@example.com",
+        token: authentication?.accessToken,
+      };
+
+      AsyncStorage.setItem("user", JSON.stringify(user)).then(() => {
+        navigation.replace("Home");
+      });
+    }
+  }, [response]);
+
+  // ---------------------------------------------------
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -73,6 +99,16 @@ const LoginScreen = ({ navigation }) => {
         onPress={handleLogin}
         color={theme.buttonBackground}
         testID="loginButton"
+      />
+
+      <View style={{ height: 20 }} />
+
+      <Button
+        title="Login with Google"
+        onPress={() => promptAsync()}
+        disabled={!request}
+        color="#EA4335"
+        testID="googleLoginButton"
       />
     </View>
   );

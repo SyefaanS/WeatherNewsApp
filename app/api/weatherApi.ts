@@ -1,14 +1,12 @@
 import axios from "axios";
-
-const API_KEY = "18c3c75556b986dbc1b196f905827092";
-const BASE_URL = "https://api.openweathermap.org/data/2.5/weather";
+import { WEATHER_API_KEY, WEATHER_API_URL } from "@env";
 
 const fetchWeather = async (latitude: number, longitude: number) => {
-  const response = await axios.get(BASE_URL, {
+  const response = await axios.get(WEATHER_API_URL, {
     params: {
       lat: latitude,
       lon: longitude,
-      appid: API_KEY,
+      appid: WEATHER_API_KEY,
       units: "metric",
     },
   });

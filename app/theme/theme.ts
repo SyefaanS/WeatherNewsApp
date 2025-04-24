@@ -8,6 +8,7 @@ export const lightTheme = {
   inputBorder: "#ccc",
   buttonBackground: "#3498db",
   buttonText: "#fff",
+  placeholder: "#aaa",
 };
 
 export const darkTheme = {
@@ -17,6 +18,7 @@ export const darkTheme = {
   inputBorder: "#444",
   buttonBackground: "#2980b9",
   buttonText: "#fff",
+  placeholder: "#666",
 };
 
 export const useTheme = () => {
